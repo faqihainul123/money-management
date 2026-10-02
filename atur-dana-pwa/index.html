@@ -98,7 +98,7 @@ let S={pct:Object.fromEntries(POTS.map(p=>[p.k,p.p])),pu:0,tx:[]};
 let month=new Date().toISOString().slice(0,7);
 let kind='out';
 const LS='atur-dana-v1';
-const CFG={url:'',key:''}; // isi dari Supabase, lihat README.md
+const CFG={url:'https://otbckzpnuxkjqtdqbcbo.supabase.co/rest/v1/',key:'sb_publishable_C3BFwcWwx08-W2Vb2BACsQ_tHgtxfN7'}; // isi dari Supabase, lihat README.md
 
 function setSync(t){$('sync').textContent=t}
 let sess=null,busy=false,timer=null;
