@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Atur Dana</title>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0e0f11"><link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#14171c;--mut:#667085;--line:#e1e5eb;--btn:#14171c;--on:#fff;--bad:#d92d3a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e0f11;--card:#18191c;--tx:#f2f3f5;--mut:#9aa0a9;--line:#2a2c31;--btn:#f2f3f5;--on:#0e0f11;--bad:#ff6b73}}
+:root[data-theme="dark"]{--bg:#0e0f11;--card:#18191c;--tx:#f2f3f5;--mut:#9aa0a9;--line:#2a2c31;--btn:#f2f3f5;--on:#0e0f11;--bad:#ff6b73}
+*,*:before,*:after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{font-size:22px;margin:0}
+h2{font-size:16px;margin:0 0 12px}
+.sub{color:var(--mut);font-size:13px}
+input,select,button{font:inherit;color:var(--tx)}
+input,select{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--tx);outline-offset:2px}
+button{cursor:pointer;border:0;border-radius:10px;padding:10px 16px;font-weight:600;background:var(--btn);color:var(--on)}
+button.ghost{background:transparent;color:var(--mut);padding:4px 8px;font-weight:400}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.donut{display:block;width:100%;max-width:320px;margin:0 auto}
+.donut text{fill:var(--tx);text-anchor:middle}
+.pots{display:grid;gap:14px}
+.pot .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.bar{height:8px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 4px}
+.bar i{display:block;height:100%;border-radius:6px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form .full{grid-column:1/-1}
+.seg{display:flex;gap:6px}
+.seg button{flex:1;background:var(--bg);color:var(--mut);border:1px solid var(--line)}
+.seg button.on{background:var(--btn);color:var(--on);border-color:var(--btn)}
+.tx{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.tx:first-child{border-top:0}
+.pct{display:grid;grid-template-columns:1fr 80px;gap:8px;align-items:center;margin-bottom:8px}
+.warn{color:var(--bad);font-size:13px}
+.num{font-variant-numeric:tabular-nums}
+#sync{font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div><h1>Atur Dana</h1><div id="sync" class="sub">Memuat…</div></div>
+  <input id="month" type="month" style="width:auto" aria-label="Bulan">
+</header>
+
+<section id="auth" class="card" style="margin-bottom:16px"></section>
+<div class="grid">
+  <section class="card">
+    <svg id="donut" class="donut" viewBox="0 0 220 220" role="img" aria-label="Pembagian dana"></svg>
+    <div id="legend" class="sub" style="text-align:center;margin-top:8px"></div>
+  </section>
+  <section class="card">
+    <h2>Pos dana bulan ini</h2>
+    <div id="pots" class="pots"></div>
+  </section>
+  <section class="card">
+    <h2>Catat transaksi</h2>
+    <div class="form">
+      <div class="seg full"><button id="tOut" class="on" type="button">Pengeluaran</button><button id="tIn" type="button">Pemasukan</button></div>
+      <select id="pot" class="full" aria-label="Pos"></select>
+      <input id="amt" type="number" inputmode="numeric" min="0" placeholder="Jumlah (Rp)" aria-label="Jumlah">
+      <input id="note" type="text" placeholder="Catatan" aria-label="Catatan">
+      <button id="add" class="full" type="button">Simpan transaksi</button>
+    </div>
+  </section>
+  <section class="card">
+    <h2>Riwayat</h2>
+    <div id="list"></div>
+  </section>
+  <section class="card" style="grid-column:1/-1">
+    <h2>Atur persentase pembagian</h2>
+    <div id="pcts"></div>
+    <div id="pctWarn" class="warn"></div>
+  </section>
+</div>
+</main>
+
+<script>
+const POTS=[
+  {k:'keb',n:'Kebutuhan & Cicilan',p:45,c:'#9fd3ff'},
+  {k:'ortu',n:'Orang Tua',p:10,c:'#9b9bff'},
+  {k:'ops',n:'Subsidi Operasional',p:20,c:'#5fd770'},
+  {k:'inv',n:'Investasi',p:15,c:'#ffd60a'},
+  {k:'dar',n:'Tabungan Darurat',p:10,c:'#ff5a5f'}
+];
+const $=id=>document.getElementById(id);
+const rp=n=>'Rp'+Math.round(n).toLocaleString('id-ID');
+let S={pct:Object.fromEntries(POTS.map(p=>[p.k,p.p])),pu:0,tx:[]};
+let month=new Date().toISOString().slice(0,7);
+let kind='out';
+const LS='atur-dana-v1';
+const CFG={url:'',key:''}; // isi dari Supabase, lihat README.md
+
+function setSync(t){$('sync').textContent=t}
+let sess=null,busy=false,timer=null;
+try{sess=JSON.parse(localStorage.getItem(LS+'-s'))}catch(e){}
+const cfgOn=()=>CFG.url&&CFG.key;
+function persist(){
+  try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){setSync('Penyimpanan perangkat penuh');return}
+  setSync(sess?'Tersimpan, menunggu sinkron…':'Tersimpan di perangkat ini');
+  clearTimeout(timer);timer=setTimeout(sync,1500);
+}
+async function api(path,opt={},auth=true){
+  const h=Object.assign({apikey:CFG.key,'Content-Type':'application/json'},opt.headers||{});
+  if(auth){await fresh();h.Authorization='Bearer '+sess.access_token}
+  const r=await fetch(CFG.url+path,Object.assign({},opt,{headers:h}));
+  const t=await r.text();
+  if(!r.ok)throw new Error(t.slice(0,160));
+  return t?JSON.parse(t):null;
+}
+async function fresh(){
+  if(sess.exp-Date.now()>60000)return;
+  setSess(await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:sess.refresh_token})},false));
+}
+function setSess(r){
+  sess=r?{access_token:r.access_token,refresh_token:r.refresh_token,exp:Date.now()+r.expires_in*1000,uid:r.user?r.user.id:sess.uid,email:r.user?r.user.email:sess.email}:null;
+  try{sess?localStorage.setItem(LS+'-s',JSON.stringify(sess)):localStorage.removeItem(LS+'-s')}catch(e){}
+  drawAuth();
+}
+function merge(a,b){
+  const m=new Map();
+  [...(b.tx||[]),...(a.tx||[])].forEach(t=>{const o=m.get(t.id);if(!o||(t.u||0)>=(o.u||0))m.set(t.id,t)});
+  return{pct:(b.pu||0)>(a.pu||0)?b.pct:a.pct,pu:Math.max(a.pu||0,b.pu||0),tx:[...m.values()]};
+}
+async function sync(){
+  if(!sess||busy||!navigator.onLine)return;
+  busy=true;setSync('Menyinkronkan…');
+  try{
+    const rows=await api('/rest/v1/finance_state?select=data&user_id=eq.'+sess.uid);
+    S=merge(S,(rows[0]&&rows[0].data)||{});
+    localStorage.setItem(LS,JSON.stringify(S));
+    await api('/rest/v1/finance_state',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:sess.uid,data:S,updated_at:new Date().toISOString()})});
+    buildStatic();render();
+    setSync('Tersinkron '+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setSync('Belum tersinkron, dicoba lagi saat online')}
+  busy=false;
+}
+function drawAuth(){
+  const el=$('auth');
+  if(!cfgOn()){el.style.display='none';return}
+  el.innerHTML=sess
+  ?`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="sub">Sinkron aktif: ${esc(sess.email||'')}</span><span><button id="syncNow" type="button">Sinkron sekarang</button> <button id="out" class="ghost" type="button">Keluar</button></span></div>`
+  :`<h2>Aktifkan sinkron laptop dan HP</h2><div class="form"><input id="em" type="email" placeholder="Email" autocomplete="email"><input id="pw" type="password" placeholder="Kata sandi (min. 6)" autocomplete="current-password"><button id="in" type="button">Masuk</button><button id="up" type="button" class="ghost" style="border:1px solid var(--line)">Daftar akun baru</button></div><div id="aerr" class="warn"></div>`;
+}
+$('auth').onclick=async e=>{
+  const id=e.target.id;
+  if(id==='out'){setSess(null);setSync('Tersimpan di perangkat ini');return}
+  if(id==='syncNow'){sync();return}
+  if(id!=='in'&&id!=='up')return;
+  const body=JSON.stringify({email:$('em').value.trim(),password:$('pw').value});
+  try{
+    const r=await api(id==='up'?'/auth/v1/signup':'/auth/v1/token?grant_type=password',{method:'POST',body},false);
+    if(!r.access_token){$('aerr').textContent='Cek email untuk konfirmasi, lalu tekan Masuk.';return}
+    setSess(r);sync();
+  }catch(err){$('aerr').textContent='Gagal: '+err.message}
+};
+function calc(){
+  const m=S.tx.filter(t=>!t.del&&t.date.slice(0,7)===month);
+  const total=m.filter(t=>t.type==='in').reduce((a,t)=>a+t.amt,0);
+  const spent={};POTS.forEach(p=>spent[p.k]=0);
+  m.filter(t=>t.type==='out').forEach(t=>{spent[t.pot]=(spent[t.pot]||0)+t.amt});
+  return{m,total,spent};
+}
+
+function render(){
+  const{m,total,spent}=calc();
+  // donut
+  const R=80,C=2*Math.PI*R;let off=0,svg='';
+  const sum=POTS.reduce((a,p)=>a+(+S.pct[p.k]||0),0)||100;
+  POTS.forEach(p=>{
+    const f=(+S.pct[p.k]||0)/sum,len=Math.max(0,f*C-3);
+    svg+=`<circle cx="110" cy="110" r="${R}" fill="none" stroke="${p.c}" stroke-width="26" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 110 110)"/>`;
+    off+=f*C;
+  });
+  svg+=`<text x="110" y="102" font-size="11" style="fill:var(--mut)">Total Dana</text><text x="110" y="124" font-size="${total>=1e8?15:19}" font-weight="700" class="num">${rp(total)}</text>`;
+  $('donut').innerHTML=svg;
+  $('legend').textContent=POTS.map(p=>`${p.n} ${S.pct[p.k]}%`).join(' · ');
+  // pots
+  $('pots').innerHTML=POTS.map(p=>{
+    const alloc=total*(+S.pct[p.k]||0)/sum*(sum/100)/(sum/100),sp=spent[p.k]||0,left=alloc-sp;
+    const w=alloc>0?Math.min(100,sp/alloc*100):0;
+    return`<div class="pot"><div class="row"><b><span class="dot" style="background:${p.c}"></span>${p.n}</b><span class="sub">${S.pct[p.k]}%</span></div>
+    <div class="bar"><i style="width:${w}%;background:${left<0?'var(--bad)':p.c}"></i></div>
+    <div class="row sub num"><span>Dialokasikan ${rp(alloc)}</span><span>Terpakai ${rp(sp)}</span></div>
+    <div class="row num" style="font-size:14px"><span>Sisa</span><b style="color:${left<0?'var(--bad)':'inherit'}">${rp(left)}</b></div></div>`;
+  }).join('');
+  // list
+  const rows=[...m].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  $('list').innerHTML=rows.length?rows.map(t=>{
+    const p=POTS.find(x=>x.k===t.pot);
+    return`<div class="tx"><div><div>${t.type==='in'?'Pemasukan':p?p.n:'Lainnya'}${t.note?' · '+esc(t.note):''}</div><div class="sub">${t.date}</div></div>
+    <div style="display:flex;align-items:center;gap:4px"><b class="num" style="color:${t.type==='in'?'#2f9e44':'inherit'}">${t.type==='in'?'+':'−'}${rp(t.amt)}</b><button class="ghost" data-del="${t.id}" aria-label="Hapus">Hapus</button></div></div>`;
+  }).join(''):'<div class="sub">Belum ada transaksi bulan ini. Mulai dengan mencatat pemasukan.</div>';
+  // pct editor
+  const tot=POTS.reduce((a,p)=>a+(+S.pct[p.k]||0),0);
+  $('pctWarn').textContent=tot===100?'':`Total persentase ${tot}%. Ubah sampai tepat 100%.`;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+function buildStatic(){
+  $('month').value=month;
+  $('pot').innerHTML=POTS.map(p=>`<option value="${p.k}">${p.n}</option>`).join('');
+  $('pcts').innerHTML=POTS.map(p=>`<label class="pct"><span><span class="dot" style="background:${p.c}"></span>${p.n}</span><input type="number" min="0" max="100" data-k="${p.k}" value="${S.pct[p.k]}"></label>`).join('');
+}
+function setKind(k){
+  kind=k;$('tOut').classList.toggle('on',k==='out');$('tIn').classList.toggle('on',k==='in');
+  $('pot').style.display=k==='out'?'':'none';
+}
+$('tOut').onclick=()=>setKind('out');
+$('tIn').onclick=()=>setKind('in');
+$('month').onchange=e=>{month=e.target.value||month;render()};
+$('add').onclick=()=>{
+  const amt=Math.round(+$('amt').value);
+  if(!(amt>0)){$('amt').focus();return}
+  const d=new Date().toISOString().slice(0,10);
+  const date=month===d.slice(0,7)?d:month+'-01';
+  S.tx.push({id:Date.now(),u:Date.now(),type:kind,pot:kind==='out'?$('pot').value:null,amt,note:$('note').value.trim(),date});
+  $('amt').value='';$('note').value='';
+  persist();render();
+};
+$('list').onclick=e=>{
+  const id=e.target.getAttribute&&e.target.getAttribute('data-del');
+  if(!id)return;
+  const t=S.tx.find(t=>String(t.id)===id);if(t){t.del=true;t.u=Date.now()}persist();render();
+};
+$('pcts').oninput=e=>{
+  const k=e.target.getAttribute('data-k');if(!k)return;
+  S.pct[k]=Math.max(0,Math.min(100,+e.target.value||0));
+  const tot=POTS.reduce((a,p)=>a+(+S.pct[p.k]||0),0);
+  if(tot===100){S.pu=Date.now();persist()}
+  render();
+};
+
+async function init(){
+  try{const r=JSON.parse(localStorage.getItem(LS));if(r){S.pct=Object.assign(S.pct,r.pct);S.pu=r.pu||0;S.tx=r.tx||[]}}catch(e){}
+  buildStatic();setKind('out');render();drawAuth();
+  setSync(!cfgOn()?'Mode perangkat ini saja (sinkron belum dikonfigurasi)':sess?'Tersimpan di perangkat ini':'Belum masuk, data hanya di perangkat ini');
+  addEventListener('online',sync);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)sync()});
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  sync();
+}
+init();
+</script>
+</body>
+</html>
